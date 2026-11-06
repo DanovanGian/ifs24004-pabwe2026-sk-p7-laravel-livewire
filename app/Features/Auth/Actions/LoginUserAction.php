@@ -18,6 +18,6 @@ class LoginUserAction
             ]);
         }
 
-        request()->session()->regenerate();
+        session()->regenerate();
     }
 }

@@ -10,6 +10,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('username', 50)->nullable()->after('name');
+            $table->string('role')->default('member')->after('password');
+            $table->string('profile_photo_path')->nullable()->after('role');
+        });
+
         // Perbaiki akun Admin.
         DB::table('users')
             ->where('email', 'admin@stock.test')
@@ -32,9 +38,11 @@ return new class extends Migration
                 $query->whereNull('username')
                     ->orWhere('username', '');
             })
-            ->update([
-                'username' => DB::raw("CONCAT('user_', id)"),
-            ]);
+            ->orderBy('id')
+            ->get(['id'])
+            ->each(fn ($user) => DB::table('users')
+                ->where('id', $user->id)
+                ->update(['username' => 'user_'.$user->id]));
 
         // Tambahkan unique index.
         Schema::table('users', function (Blueprint $table) {
@@ -46,6 +54,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropUnique(['username']);
+            $table->dropColumn(['username', 'role', 'profile_photo_path']);
         });
     }
 };

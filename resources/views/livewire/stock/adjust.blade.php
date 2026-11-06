@@ -1,5 +1,5 @@
 <div class="panel">
-    <p><a href="{{ route('dashboard') }}">← Kembali ke dashboard</a></p>
+    <p><a href="{{ route('stocks.index') }}">← Kembali ke dashboard</a></p>
     <h1>Atur stok: {{ $stock->name }}</h1>
     <p class="muted">Stok tersedia: <strong>{{ $stock->quantity }} {{ $stock->unit }}</strong></p>
 

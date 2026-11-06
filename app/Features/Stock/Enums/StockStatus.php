@@ -41,4 +41,3 @@ enum StockStatus: string
         return self::AVAILABLE;
     }
 }
-

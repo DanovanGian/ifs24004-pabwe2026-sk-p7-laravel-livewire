@@ -1,5 +1,5 @@
 <div class="panel">
-    <p><a href="{{ route('dashboard') }}">← Kembali ke dashboard</a></p>
+    <p><a href="{{ route('stocks.index') }}">← Kembali ke stok</a></p>
     <h1>Tambah barang</h1>
 
     <form wire:submit="save">
@@ -11,8 +11,8 @@
         <input id="sku" type="text" wire:model="sku">
         @error('sku') <p class="error">{{ $message }}</p> @enderror
 
-        <label for="description">Deskripsi</label>
-        <textarea id="description" wire:model="description" rows="3"></textarea>
+        <label>Deskripsi (Markdown)</label>
+        <div wire:ignore><div id="stock-description-editor"></div></div>
         @error('description') <p class="error">{{ $message }}</p> @enderror
 
         <label for="quantity">Jumlah stok</label>
@@ -42,3 +42,18 @@
         <button type="submit" wire:loading.attr="disabled">Simpan barang</button>
     </form>
 </div>
+
+@script
+<script>
+    const descriptionEditor = new window.StockMarkdownEditor({
+        el: document.querySelector('#stock-description-editor'),
+        height: '280px',
+        initialEditType: 'markdown',
+        previewStyle: 'vertical',
+        initialValue: '',
+        usageStatistics: false,
+    });
+
+    descriptionEditor.on('change', () => $wire.$set('description', descriptionEditor.getMarkdown()));
+</script>
+@endscript
