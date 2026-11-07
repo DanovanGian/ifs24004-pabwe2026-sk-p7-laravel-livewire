@@ -1,27 +1,32 @@
 <div wire:keydown.escape.window="closeForm">
-    <h1>Daftar Stok</h1>
-    <p class="muted">Kelola persediaan barang milik akun Anda.</p>
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Ringkasan inventaris</p>
+            <h1>Daftar stok</h1>
+            <p class="muted">Pantau barang, jumlah persediaan, dan kondisi stok Anda.</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn-outline" type="button" wire:click="openCreate">＋ Tambah barang</button>
+            <a class="btn-soft" href="{{ route('stocks.export', array_filter(['search' => $search, 'status' => $statusFilter], fn ($value) => $value !== '')) }}">Unduh Excel</a>
+        </div>
+    </div>
 
     @if (session('message'))
         <p class="flash">{{ session('message') }}</p>
     @endif
 
-    <p>
-        <button type="button" wire:click="openCreate">+ Tambah barang</button>
-        <a href="{{ route('stocks.export', array_filter(['search' => $search, 'status' => $statusFilter], fn ($value) => $value !== '')) }}"
-           style="display:inline-block;padding:10px 14px;border-radius:8px;background:#0f766e;color:white;text-decoration:none">
-            Ekspor Excel
-        </a>
-    </p>
-    <form wire:submit="import" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 20px">
-        <label for="stock-excel-file">Impor Excel (.xlsx / .xls)</label>
-        <input id="stock-excel-file" type="file" accept=".xlsx,.xls" wire:model="excelFile" style="width:auto">
-        <button type="submit" wire:loading.attr="disabled" wire:target="import">Impor</button>
+    <form class="import-bar" wire:submit="import">
+        <div class="import-copy"><strong>Impor data stok</strong><span>Unggah file Excel .xlsx atau .xls</span></div>
+        <input id="stock-excel-file" type="file" accept=".xlsx,.xls" wire:model="excelFile">
+        <button class="btn-soft" type="submit" wire:loading.attr="disabled" wire:target="import">Pilih file & impor</button>
         <span wire:loading wire:target="import">Memproses file...</span>
         @error('excelFile') <span class="error">{{ $message }}</span> @enderror
     </form>
-    <section class="panel" style="margin-bottom:20px">
-        <h2>Buat draf stok dengan AI</h2>
+    <section class="panel ai-panel">
+        <div class="section-heading">
+            <div><p class="eyebrow">Asisten inventaris</p><h2>Buat draf dengan AI</h2></div>
+            <span class="ai-pill">AI</span>
+        </div>
         <p class="muted">AI menyiapkan draf untuk ditinjau. Data baru tersimpan setelah Anda memilih item.</p>
         <form wire:submit="generateWithAi" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
             <div style="flex:1;min-width:240px">
@@ -62,14 +67,17 @@
     </section>
 
     <section class="cards">
-        <article class="card"><p>Jenis barang</p><strong>{{ $totalProducts }}</strong></article>
-        <article class="card"><p>Total unit stok</p><strong>{{ $totalQuantity }}</strong></article>
-        <article class="card"><p>Stok menipis</p><strong>{{ $lowStockCount }}</strong></article>
-        <article class="card"><p>Stok habis</p><strong>{{ $outOfStockCount }}</strong></article>
+        <article class="card"><p>Jenis barang</p><strong>{{ number_format($totalProducts) }}</strong><span class="metric-caption">item tercatat</span></article>
+        <article class="card"><p>Total unit stok</p><strong>{{ number_format($totalQuantity) }}</strong><span class="metric-caption">unit tersedia</span></article>
+        <article class="card"><p>Stok menipis</p><strong>{{ number_format($lowStockCount) }}</strong><span class="metric-caption">perlu diperiksa</span></article>
+        <article class="card"><p>Stok habis</p><strong>{{ number_format($outOfStockCount) }}</strong><span class="metric-caption">perlu diisi ulang</span></article>
     </section>
 
-    <section class="panel">
-        <h2>Daftar stok</h2>
+    <section class="panel stock-table-panel">
+        <div class="section-heading">
+            <div><p class="eyebrow">Kelola barang</p><h2>Semua stok</h2></div>
+            <span class="table-count">{{ $totalProducts }} barang</span>
+        </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px">
             <input type="search" placeholder="Cari nama atau SKU..."
                    wire:model.live.debounce.300ms="search" style="width:auto;min-width:240px">

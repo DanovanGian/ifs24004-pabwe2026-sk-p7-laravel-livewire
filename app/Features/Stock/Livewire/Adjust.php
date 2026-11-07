@@ -31,7 +31,7 @@ class Adjust extends Component
     {
         $validated = $this->validate([
             'type' => ['required', Rule::in(['in', 'out'])],
-            'quantity' => ['required', 'integer', 'min:1'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:'.Stock::MAX_QUANTITY],
             'note' => ['nullable', 'string', 'max:500'],
         ]);
 

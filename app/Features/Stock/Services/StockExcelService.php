@@ -116,10 +116,10 @@ class StockExcelService
                     'name' => ['required', 'string', 'max:255'],
                     'sku' => ['nullable', 'string', 'max:255', 'unique:stocks,sku'],
                     'description' => ['nullable', 'string', 'max:5000'],
-                    'quantity' => ['required', 'integer', 'min:0'],
+                    'quantity' => ['required', 'integer', 'min:0', 'max:'.Stock::MAX_QUANTITY],
                     'unit' => ['required', 'string', 'max:30'],
-                    'price' => ['nullable', 'numeric', 'min:0'],
-                    'min_stock' => ['required', 'integer', 'min:0'],
+                    'price' => ['nullable', 'numeric', 'min:0', 'max:'.Stock::MAX_PRICE],
+                    'min_stock' => ['required', 'integer', 'min:0', 'max:'.Stock::MAX_QUANTITY],
                 ]);
 
                 if ($validator->fails()) {

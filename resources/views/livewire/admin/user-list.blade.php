@@ -1,11 +1,13 @@
 <div>
-    <h1>Daftar Member</h1>
-    <p class="muted">Ringkasan akun dan jumlah stok. Data stok hanya dapat dilihat admin.</p>
+    <div class="page-heading">
+        <div><p class="eyebrow">Kontrol administrator</p><h1>Daftar member</h1><p class="muted">Ringkasan akun dan inventaris. Data stok bersifat hanya baca.</p></div>
+    </div>
 
     <label for="user-search">Cari member</label>
     <input id="user-search" type="search" wire:model.live.debounce.300ms="search" placeholder="Nama, username, atau email">
 
-    <section class="panel" style="margin-top:20px">
+    <section class="panel stock-table-panel" style="margin-top:20px">
+        <div class="section-heading"><div><h2>Akun member</h2></div><span class="table-count">{{ $users->total() }} akun</span></div>
         <table>
             <thead>
                 <tr><th>Nama</th><th>Username</th><th>Email</th><th>Jenis stok</th><th>Aksi</th></tr>

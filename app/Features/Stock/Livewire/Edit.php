@@ -66,10 +66,10 @@ class Edit extends Component
                 Rule::unique('stocks', 'sku')->ignore($this->stockId),
             ],
             'description' => ['nullable', 'string', 'max:5000'],
-            'quantity' => ['required', 'integer', 'min:0'],
+            'quantity' => ['required', 'integer', 'min:0', 'max:'.Stock::MAX_QUANTITY],
             'unit' => ['required', 'string', 'max:30'],
-            'price' => ['nullable', 'numeric', 'min:0'],
-            'min_stock' => ['required', 'integer', 'min:0'],
+            'price' => ['nullable', 'numeric', 'min:0', 'max:'.Stock::MAX_PRICE],
+            'min_stock' => ['required', 'integer', 'min:0', 'max:'.Stock::MAX_QUANTITY],
             'coverImage' => ['nullable', 'image', 'max:2048'],
         ]);
 

@@ -11,6 +11,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Stock extends Model
 {
+    public const MAX_QUANTITY = 4294967295;
+
+    public const MAX_PRICE = '9999999999999.99';
+
     use HasFactory;
 
     protected static function newFactory(): StockFactory

@@ -118,10 +118,10 @@ class StockList extends Component
                 Rule::unique('stocks', 'sku')->ignore($this->editingStockId),
             ],
             'description' => ['nullable', 'string', 'max:5000'],
-            'quantity' => ['required', 'integer', 'min:0'],
+            'quantity' => ['required', 'integer', 'min:0', 'max:'.Stock::MAX_QUANTITY],
             'unit' => ['required', 'string', 'max:30'],
-            'price' => ['nullable', 'numeric', 'min:0'],
-            'min_stock' => ['required', 'integer', 'min:0'],
+            'price' => ['nullable', 'numeric', 'min:0', 'max:'.Stock::MAX_PRICE],
+            'min_stock' => ['required', 'integer', 'min:0', 'max:'.Stock::MAX_QUANTITY],
             'coverImage' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
@@ -215,6 +215,8 @@ class StockList extends Component
             ]);
         }
 
+        $validatedItems = [];
+
         foreach ($this->selectedAiItems as $index) {
             if (! is_numeric($index) || ! array_key_exists((int) $index, $this->generatedItems)) {
                 throw ValidationException::withMessages([
@@ -222,11 +224,20 @@ class StockList extends Component
                 ]);
             }
 
-            $item = $this->validateGeneratedItem($this->generatedItems[(int) $index]);
+            try {
+                $validatedItems[] = $this->validateGeneratedItem($this->generatedItems[(int) $index]);
+            } catch (ValidationException $exception) {
+                throw ValidationException::withMessages([
+                    'selectedAiItems' => 'Draf AI berisi nilai di luar batas: '.$exception->validator->errors()->first(),
+                ]);
+            }
+        }
+
+        foreach ($validatedItems as $item) {
             $stockService->createFor(auth()->user(), $item);
         }
 
-        $savedCount = count($this->selectedAiItems);
+        $savedCount = count($validatedItems);
         $this->generatedItems = [];
         $this->selectedAiItems = [];
         $this->aiPrompt = '';
@@ -240,10 +251,10 @@ class StockList extends Component
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['nullable', 'string', 'max:255', 'unique:stocks,sku'],
             'description' => ['nullable', 'string', 'max:5000'],
-            'quantity' => ['required', 'integer', 'min:0'],
+            'quantity' => ['required', 'integer', 'min:0', 'max:'.Stock::MAX_QUANTITY],
             'unit' => ['required', 'string', 'max:30'],
-            'price' => ['nullable', 'numeric', 'min:0'],
-            'min_stock' => ['required', 'integer', 'min:0'],
+            'price' => ['nullable', 'numeric', 'min:0', 'max:'.Stock::MAX_PRICE],
+            'min_stock' => ['required', 'integer', 'min:0', 'max:'.Stock::MAX_QUANTITY],
         ])->validate();
 
         return $validated;

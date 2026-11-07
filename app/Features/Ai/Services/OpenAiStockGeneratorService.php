@@ -13,74 +13,68 @@ class OpenAiStockGeneratorService implements AiClientInterface
     public function generateStockItems(string $prompt, int $count): array
     {
         $apiKey = (string) config('openai.api_key');
-        if ($apiKey === '') {
-            throw new RuntimeException('OpenAI API key belum diatur di file .env.');
+        $endpoint = rtrim((string) config('openai.endpoint'), '/');
+        $model = (string) config('openai.model');
+
+        if ($apiKey === '' || $endpoint === '' || $model === '') {
+            throw new RuntimeException('Lengkapi OPENAI_ENDPOINT, OPENAI_API_KEY, dan OPENAI_MODEL di file .env.');
         }
+
+        $url = str_ends_with($endpoint, '/chat/completions')
+            ? $endpoint
+            : $endpoint.'/chat/completions';
 
         $response = Http::withToken($apiKey)
             ->acceptJson()
             ->timeout((int) config('openai.timeout', 30))
-            ->post('https://api.openai.com/v1/responses', [
-                'model' => config('openai.model', 'gpt-4.1-mini'),
-                'input' => [
-                    ['role' => 'system', 'content' => 'Buat daftar item inventaris yang realistis. Gunakan data sesuai permintaan pengguna. Kembalikan hanya JSON sesuai skema. Jangan mengarang informasi sensitif.'],
-                    ['role' => 'user', 'content' => "Buat tepat {$count} item stok untuk konteks berikut: ".trim($prompt)],
-                ],
-                'text' => [
-                    'format' => [
-                        'type' => 'json_schema',
-                        'name' => 'stock_items',
-                        'strict' => true,
-                        'schema' => [
-                            'type' => 'object',
-                            'additionalProperties' => false,
-                            'properties' => [
-                                'items' => [
-                                    'type' => 'array',
-                                    'minItems' => $count,
-                                    'maxItems' => $count,
-                                    'items' => [
-                                        'type' => 'object',
-                                        'additionalProperties' => false,
-                                        'properties' => [
-                                            'name' => ['type' => 'string'],
-                                            'sku' => ['type' => ['string', 'null']],
-                                            'description' => ['type' => ['string', 'null']],
-                                            'quantity' => ['type' => 'integer'],
-                                            'unit' => ['type' => 'string'],
-                                            'price' => ['type' => ['number', 'null']],
-                                            'min_stock' => ['type' => 'integer'],
-                                        ],
-                                        'required' => ['name', 'sku', 'description', 'quantity', 'unit', 'price', 'min_stock'],
-                                    ],
-                                ],
-                            ],
-                            'required' => ['items'],
-                        ],
+            ->post($url, [
+                'model' => $model,
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'Buat data inventaris realistis dalam Bahasa Indonesia. Jawab hanya JSON berbentuk {"items":[...]}. Buat tepat sebanyak jumlah yang diminta. Setiap item wajib berisi name (string), sku (string atau null), description (string atau null), quantity (integer >= 0), unit (string), price (angka atau null), dan min_stock (integer >= 0). Harga dalam Rupiah. Jangan mengarang informasi sensitif.',
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => "Buat tepat {$count} item stok untuk konteks berikut: ".trim($prompt),
                     ],
                 ],
+                'response_format' => ['type' => 'json_object'],
             ]);
 
         if ($response->failed()) {
-            Log::warning('OpenAI stock generation failed', ['status' => $response->status()]);
-            throw new RuntimeException('Layanan AI gagal membuat daftar barang. Coba lagi nanti.');
+            Log::warning('OpenAI compatible stock generation failed', [
+                'http_status' => $response->status(),
+                'request_id' => $response->header('x-request-id'),
+            ]);
+
+            throw new RuntimeException($this->failureMessage($response->status()));
         }
 
-        $outputText = collect($response->json('output', []))
-            ->flatMap(fn (array $output) => $output['content'] ?? [])
-            ->firstWhere('type', 'output_text');
-        $decoded = is_string($outputText['text'] ?? null)
-            ? json_decode($outputText['text'], true)
-            : null;
+        $content = $response->json('choices.0.message.content');
+        $decoded = is_string($content) ? json_decode($content, true) : null;
 
         if (! is_array($decoded) || ! is_array($decoded['items'] ?? null)) {
             throw new RuntimeException('Respons AI tidak memiliki format daftar barang yang valid.');
         }
 
         return collect($decoded['items'])
+            ->filter(fn ($item) => is_array($item))
             ->take($count)
             ->map(fn (array $item) => GeneratedStockItem::fromArray($item)->toStockData())
             ->values()
             ->all();
+    }
+
+    private function failureMessage(int $httpStatus): string
+    {
+        return match ($httpStatus) {
+            401, 403 => 'OpenAI menolak API key atau akses. Periksa OPENAI_API_KEY dan izin akun.',
+            404 => 'Endpoint atau model tidak ditemukan. Periksa OPENAI_ENDPOINT dan OPENAI_MODEL.',
+            429 => 'Batas penggunaan OpenAI tercapai. Periksa kuota atau billing akun API.',
+            default => $httpStatus >= 500
+                ? 'Layanan AI sedang mengalami gangguan. Coba lagi beberapa saat nanti.'
+                : 'Permintaan ke layanan AI ditolak. Periksa endpoint, model, dan konfigurasi API.',
+        };
     }
 }

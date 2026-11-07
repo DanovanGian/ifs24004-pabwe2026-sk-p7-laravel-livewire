@@ -58,6 +58,12 @@ class StockService
                 ]);
             }
 
+            if ($type === 'in' && $quantity > Stock::MAX_QUANTITY - $lockedStock->quantity) {
+                throw ValidationException::withMessages([
+                    'quantity' => 'Jumlah stok setelah penyesuaian melebihi batas yang didukung.',
+                ]);
+            }
+
             $newQuantity = $type === 'in'
                 ? $lockedStock->quantity + $quantity
                 : $lockedStock->quantity - $quantity;

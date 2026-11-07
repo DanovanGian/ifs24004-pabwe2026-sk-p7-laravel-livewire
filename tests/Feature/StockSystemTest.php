@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Features\Admin\Livewire\UserList;
 use App\Features\Ai\Contracts\AiClientInterface;
-use App\Features\Ai\Services\OpenAiStockGeneratorService;
+use App\Features\Ai\Services\GeminiStockGeneratorService;
 use App\Features\Auth\Actions\LoginUserAction;
 use App\Features\Auth\Actions\RegisterUserAction;
 use App\Features\Auth\Livewire\Login;
@@ -232,12 +232,13 @@ class StockSystemTest extends TestCase
 
     public function test_ai_generator_parses_structured_response_and_reports_missing_key(): void
     {
-        config(['openai.api_key' => 'test-key']);
+        config(['gemini.api_key' => 'test-key']);
         Http::fake([
-            'api.openai.com/v1/responses' => Http::response([
-                'output' => [[
+            'generativelanguage.googleapis.com/v1beta/interactions' => Http::response([
+                'steps' => [[
+                    'type' => 'model_output',
                     'content' => [[
-                        'type' => 'output_text',
+                        'type' => 'text',
                         'text' => json_encode(['items' => [[
                             'name' => 'Notebook', 'sku' => null, 'description' => 'Catatan',
                             'quantity' => 0, 'unit' => 'pcs', 'price' => null, 'min_stock' => 5,
@@ -247,14 +248,14 @@ class StockSystemTest extends TestCase
             ]),
         ]);
 
-        $items = app(OpenAiStockGeneratorService::class)
+        $items = app(GeminiStockGeneratorService::class)
             ->generateStockItems('alat tulis', 1);
         $this->assertSame('out_of_stock', $items[0]['status']);
-        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer test-key'));
+        Http::assertSent(fn ($request) => $request->hasHeader('x-goog-api-key', 'test-key'));
 
-        config(['openai.api_key' => '']);
+        config(['gemini.api_key' => '']);
         $this->expectException(\RuntimeException::class);
-        app(OpenAiStockGeneratorService::class)
+        app(GeminiStockGeneratorService::class)
             ->generateStockItems('alat tulis', 1);
     }
 
@@ -482,20 +483,22 @@ class StockSystemTest extends TestCase
 
     public function test_ai_service_reports_provider_failure_and_malformed_payload(): void
     {
-        config(['openai.api_key' => 'test-key']);
+        config(['gemini.api_key' => 'test-key']);
         Log::spy();
-        Http::fake(['api.openai.com/v1/responses' => Http::sequence()
+        Http::fake(['generativelanguage.googleapis.com/v1beta/interactions' => Http::sequence()
             ->push([], 503)
-            ->push(['output' => []])]);
+            ->push([], 503)
+            ->push([], 503)
+            ->push(['steps' => []])]);
         try {
-            app(OpenAiStockGeneratorService::class)->generateStockItems('office', 1);
+            app(GeminiStockGeneratorService::class)->generateStockItems('office', 1);
             $this->fail('Expected provider failure.');
         } catch (\RuntimeException $exception) {
-            $this->assertStringContainsString('Layanan AI gagal', $exception->getMessage());
+            $this->assertStringContainsString('Gemini', $exception->getMessage());
         }
 
         $this->expectException(\RuntimeException::class);
-        app(OpenAiStockGeneratorService::class)->generateStockItems('office', 1);
+        app(GeminiStockGeneratorService::class)->generateStockItems('office', 1);
     }
 
     public function test_stock_list_handles_ai_provider_errors_empty_selection_invalid_selection_and_import(): void
