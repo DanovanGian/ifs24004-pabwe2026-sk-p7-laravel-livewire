@@ -184,6 +184,8 @@ pipeline {
                     rm -f latest-app.zip
                     zip -r latest-app.zip . \
                         -x "node_modules/*" \
+                        -x "vendor/*" \
+                        -x "vendor/**" \
                         -x ".git/*" \
                         -x ".env" \
                         -x ".env.*" \
