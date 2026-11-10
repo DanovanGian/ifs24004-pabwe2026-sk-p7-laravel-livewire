@@ -186,6 +186,8 @@ pipeline {
                         -x "node_modules/*" \
                         -x "vendor/*" \
                         -x "vendor/**" \
+                        -x "bootstrap/cache/*" \
+                        -x "bootstrap/cache/**" \
                         -x ".git/*" \
                         -x ".env" \
                         -x ".env.*" \
