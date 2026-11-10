@@ -27,8 +27,7 @@ class Login extends Component
         $action->execute([
             'username' => $validated['username'],
             'password' => $validated['password'],
-            'remember' => $validated['remember'],
-        ]);
+        ], $validated['remember']);
 
         $home = auth()->user()->role === 'admin'
             ? route('admin.users')

@@ -7,17 +7,14 @@ use Illuminate\Validation\ValidationException;
 
 class LoginUserAction
 {
-    public function execute(array $credentials): void
+    public function execute(array $credentials, bool $remember = false): void
     {
-        $remember = (bool) ($credentials['remember'] ?? false);
-        unset($credentials['remember']);
-
         if (! Auth::attempt($credentials, $remember)) {
             throw ValidationException::withMessages([
                 'username' => 'Username atau password salah.',
             ]);
         }
 
-        session()->regenerate();
+        request()->session()->regenerate();
     }
 }
