@@ -41,21 +41,34 @@ pipeline {
             }
         }
         stage('Install PHP Dependencies') {
-    agent {
-        docker {
-            image 'composer:2'
-            reuseNode true
+            agent {
+                docker {
+                    image 'composer:2'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    set -e
+
+                    if command -v apk >/dev/null 2>&1; then
+                        apk add --no-cache freetype-dev libjpeg-turbo-dev libpng-dev $PHPIZE_DEPS
+                    elif command -v apt-get >/dev/null 2>&1; then
+                        apt-get update
+                        apt-get install -y $PHPIZE_DEPS libfreetype6-dev libjpeg62-turbo-dev libpng-dev
+                    else
+                        echo "Package manager tidak ditemukan untuk memasang GD"
+                        exit 1
+                    fi
+
+                    docker-php-ext-configure gd --with-freetype --with-jpeg
+                    docker-php-ext-install -j"$(nproc)" gd
+
+                    php --ri gd
+                    composer install --no-interaction --prefer-dist
+                '''
+            }
         }
-    }
-    steps {
-        sh '''
-            set -e
-            php --version
-            composer --version
-            composer install --no-interaction --prefer-dist
-        '''
-    }
-}
         // ============================================================
         // TEST
         // ============================================================
