@@ -45,6 +45,7 @@ pipeline {
                 docker {
                     image 'composer:2'
                     reuseNode true
+                    args '-u root'
                 }
             }
             steps {
