@@ -76,16 +76,17 @@ pipeline {
         stage('Test') {
             agent {
                 docker {
-                    image 'node:24-alpine'
+                    image 'composer:2'
                     reuseNode true
+                    args '-u root'
                 }
             }
             steps {
                 sh '''
                     set -e
-                    echo "=== Running Tests with Coverage ==="
-                    npx vitest run --coverage
-                    echo "=== Tests Passed ==="
+                    echo "=== Running Laravel Tests ==="
+                    php artisan test
+                    echo "=== Laravel Tests Passed ==="
                 '''
             }
         }
