@@ -36,6 +36,7 @@ pipeline {
                     set -e
                     echo "=== Installing Dependencies ==="
                     bun install
+                    bun run build
                     echo "=== Dependencies Installed ==="
                 '''
             }
@@ -87,6 +88,19 @@ pipeline {
                     echo "=== Running Laravel Tests ==="
                     export APP_ENV=testing
                     export APP_KEY="base64:$(php -r 'echo base64_encode(random_bytes(32));')"
+                    if command -v apk >/dev/null 2>&1; then
+                        apk add --no-cache freetype-dev libjpeg-turbo-dev libpng-dev $PHPIZE_DEPS
+                    elif command -v apt-get >/dev/null 2>&1; then
+                        apt-get update
+                        apt-get install -y $PHPIZE_DEPS libfreetype6-dev libjpeg62-turbo-dev libpng-dev
+                    else
+                        echo "Package manager tidak ditemukan untuk memasang GD"
+                        exit 1
+                    fi
+
+                    docker-php-ext-configure gd --with-freetype --with-jpeg
+                    docker-php-ext-install -j"$(nproc)" gd
+
                     php artisan test
                     echo "=== Laravel Tests Passed ==="
                 '''
