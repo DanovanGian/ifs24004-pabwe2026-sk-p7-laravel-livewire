@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Features\Ai\Contracts\AiClientInterface;
-use App\Features\Ai\Services\OpenAiStockGeneratorService;
+use App\Features\Ai\Services\GroqStockGeneratorService;
 use App\Features\Stock\Contracts\StockRepositoryInterface;
 use App\Features\Stock\Models\Stock;
 use App\Features\Stock\Policies\StockPolicy;
@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(StockRepositoryInterface::class, StockRepository::class);
-        $this->app->bind(AiClientInterface::class, OpenAiStockGeneratorService::class);
+        $this->app->bind(AiClientInterface::class, GroqStockGeneratorService::class);
     }
 
     public function boot(): void
