@@ -18,6 +18,7 @@ pipeline {
                 }
             }
             steps {
+                deleteDir()
                 checkout scm
             }
         }
